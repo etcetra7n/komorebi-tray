@@ -59,8 +59,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
                 const char* cmd = "cmd /c taskkill /IM komorebi.exe /F";
                 executeCommand(cmd);
             } else {
-                const char* cmd = "cmd /c start \"\" /min komorebi.exe";
-                executeCommand(cmd);
+                STARTUPINFO si = { sizeof(si) };
+                si.dwFlags = STARTF_USESHOWWINDOW;
+                si.wShowWindow = SW_HIDE;
+
+                PROCESS_INFORMATION pi;
+                CreateProcess(
+                    NULL,
+                    (LPSTR)"komorebi.exe",
+                    NULL,
+                    NULL,
+                    FALSE,
+                    CREATE_NO_WINDOW,
+                    NULL,
+                    NULL,
+                    &si,
+                    &pi
+                );
             }
             isActive = !isActive;
             lstrcpy(nid.szTip, isActive ? TEXT("Komorebi: Running") : TEXT("Komorebi: Idle"));
