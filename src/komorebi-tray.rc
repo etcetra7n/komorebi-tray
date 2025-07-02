@@ -2,8 +2,8 @@
 #define ID_TRAY_APP_ICON 101
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 3,4,3,0
-PRODUCTVERSION 3,4,3,0
+FILEVERSION 4,2,6,0
+PRODUCTVERSION 4,2,6,0
 FILEOS 0x40004
 FILETYPE 0x1
 {
@@ -12,9 +12,9 @@ FILETYPE 0x1
         BLOCK "040904b0"
         {
             VALUE "CompanyName", "etcetra7n"
-            VALUE "FileDescription", "Komorebi quick access"
-            VALUE "FileVersion", "3.4.5.0"
-            VALUE "ProductName", "Komorebic Tray quick access"
+            VALUE "FileDescription", "Komorebi Quick Access"
+            VALUE "FileVersion", "4.2.6.0"
+            VALUE "ProductName", "Komorebi Toggler"
             VALUE "OriginalFilename", "komorebi-tray.exe"
         }
     }
