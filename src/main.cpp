@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <shellapi.h>
+#include <tlhelp32.h>
 
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_APP_ICON 101
@@ -9,46 +10,29 @@ NOTIFYICONDATA nid = {};
 HWND hwnd;
 bool isActive;
 
-DWORD executeCommand(const char* command) {
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = NULL;
-    
-    HANDLE hRead, hWrite;
-    if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
-        return 1;
+bool terminateProcessByName(const wchar_t* exeName) {
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) return false;
+
+    PROCESSENTRY32W pe;
+    pe.dwSize = sizeof(pe);
+
+    if (Process32FirstW(hSnapshot, &pe)) {
+        do {
+            if (_wcsicmp(pe.szExeFile, exeName) == 0) {
+                HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
+                if (hProcess) {
+                    TerminateProcess(hProcess, 0);
+                    CloseHandle(hProcess);
+                    CloseHandle(hSnapshot);
+                    return true;
+                }
+            }
+        } while (Process32NextW(hSnapshot, &pe));
     }
 
-    SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
-    
-    STARTUPINFO si = { sizeof(STARTUPINFO) };
-    si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-    si.wShowWindow = SW_HIDE;
-    si.hStdOutput = hWrite;
-    si.hStdError = hWrite;
-
-    PROCESS_INFORMATION pi;
-    if (!CreateProcess(NULL, const_cast<char*>(command), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
-        CloseHandle(hRead);
-        CloseHandle(hWrite);
-        return  1;
-    }
-    CloseHandle(hWrite);
-    CloseHandle(hRead);
-
-    // Wait for the process to finish
-    WaitForSingleObject(pi.hProcess, INFINITE);
-
-    DWORD exitCode;
-    if (!GetExitCodeProcess(pi.hProcess, &exitCode)) {
-        exitCode = GetLastError();
-    }
-
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-    
-    return exitCode;
+    CloseHandle(hSnapshot);
+    return false;
 }
 
 
@@ -56,8 +40,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     if (message == WM_TRAYICON) {
         if (lParam == WM_LBUTTONUP) {
             if (isActive){
-                const char* cmd = "cmd /c taskkill /IM komorebi.exe /F";
-                executeCommand(cmd);
+                terminateProcessByName(L"komorebi.exe");
             } else {
                 STARTUPINFO si = { sizeof(si) };
                 si.dwFlags = STARTF_USESHOWWINDOW;
